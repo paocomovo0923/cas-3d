@@ -494,22 +494,24 @@ export class CASCharacter {
 
   setMorph(key: string, value: number): void {
     const hi = MORPH_ORDER.head.indexOf(key);
-    if (hi >= 0 && this.morphMeshes.head) {
+    if (hi >= 0 && this.morphMeshes.head?.morphTargetInfluences) {
       this.morphMeshes.head.morphTargetInfluences[hi] = value;
       return;
     }
     const ni = MORPH_ORDER.nose.indexOf(key);
-    if (ni >= 0 && this.morphMeshes.nose) {
+    if (ni >= 0 && this.morphMeshes.nose?.morphTargetInfluences) {
       this.morphMeshes.nose.morphTargetInfluences[ni] = value;
       return;
     }
     const ei = MORPH_ORDER.ears.indexOf(key);
     if (ei >= 0) {
-      for (const ear of this.morphMeshes.ears) ear.morphTargetInfluences[ei] = value;
+      for (const ear of this.morphMeshes.ears) {
+        if (ear.morphTargetInfluences) ear.morphTargetInfluences[ei] = value;
+      }
       return;
     }
     const ti = MORPH_ORDER.torso.indexOf(key);
-    if (ti >= 0 && this.morphMeshes.torso) {
+    if (ti >= 0 && this.morphMeshes.torso?.morphTargetInfluences) {
       this.morphMeshes.torso.morphTargetInfluences[ti] = value;
     }
   }

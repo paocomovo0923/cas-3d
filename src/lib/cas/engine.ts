@@ -307,6 +307,26 @@ export class CASEngine {
     this.activeChar().anim.mixer.timeScale = speed;
   }
 
+  /** gira o Sim ativo (setas de rotação da UI) — positivo = anti-horário */
+  rotateCharacter(delta: number): void {
+    const ch = this.activeChar();
+    ch.root.rotation.y += delta;
+  }
+
+  /** aproxima/afasta a câmera ao longo do eixo de visão (delta negativo = zoom in) */
+  zoomCamera(delta: number): void {
+    const dir = new THREE.Vector3().subVectors(this.camera.position, this.controls.target);
+    const len = THREE.MathUtils.clamp(
+      dir.length() + delta,
+      this.controls.minDistance + 0.05,
+      this.controls.maxDistance
+    );
+    dir.setLength(len);
+    this.camera.position.copy(this.controls.target).add(dir);
+    this.tweening = false;
+    this.controls.update();
+  }
+
   setCameraMode(mode: CameraMode): void {
     this.mode = mode;
     this.applyCameraMode();

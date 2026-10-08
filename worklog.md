@@ -46,3 +46,27 @@ Stage Summary:
 - Morfologia facial reativa (sliders + drag nos hotspots), catálogo com cores, gêneros F/M, 6 idades, randomizador, voz Simlish.
 - Verificado via agent-browser: 0 erros de console em load limpo; interações (gênero, catálogo, sliders, drag de hotspot, randomize, idade, chips de animação) todas funcionais.
 - Screenshots de validação em `/home/z/my-project/download/cas_*.png`.
+
+---
+Task ID: 2
+Agent: main (Super Z)
+Task: Redesenhar a GUI do CAS para o estilo The Sims 4 (referência: screenshot CAS enviado pelo usuário) — fundo azul→verde saturado, cartões flutuantes compactos, menu circular de categorias, painel "Roupa do Dia", setas de rotação e botões ✕/✓.
+
+Work Log:
+- engine.ts: adicionados `rotateCharacter(delta)` (gira o Sim ativo) e `zoomCamera(delta)` (dolly da câmera com clamp nos limites do OrbitControls).
+- hex.tsx: hexágonos reestilizados (aspiração dourada #ffd966→#f0b23e, traços branco-gelo, painel azul #1d5287).
+- NOVO GarmentThumb.tsx: silhuetas SVG por item do catálogo (cabelos curto/médio/longo/coque/rabo, camiseta/regata/moletom, calça/shorts/saia, vestido/macacão, brincos/colar/boné, óculos redondo/quadrado/escuro) preenchidas com cor da paleta.
+- NOVO CategoryOrbit.tsx: menu circular em arco com 7 categorias (Rosto & Pele + 6 do catálogo), círculos brancos 48px, ativo verde #3fae52 com anel branco, tooltip azul no hover.
+- NOVO IdentityStack.tsx (topo-esquerdo): cartão "Hello, My Name Is…" (nome+sobrenome em #e2f2ff, toggle ♀/♂) + painel azul #1d5287/92 com hexágonos, dado de sorteio, 6 idades e select de estilo de caminhada.
+- NOVO ProportionWidget.tsx (esquerda): sliders verticais customizados (tom de voz, velocidade da animação 0.5–1.6 via setWalkSpeedStyle), zoom +/− e botão de voz Simlish.
+- NOVO RotationDock.tsx (base central): setas curvas brancas de rotação 360° + chips de animação (scroll no mobile, largura ajustada p/ não colidir com ✕/✓).
+- NOVO panels/OutfitPanel.tsx: painel "Roupa do Dia" — cabeçalho da categoria, abas circulares (6 categorias), dropdown azul-claro com o tipo atual, grade 2×N com GarmentThumb + badge ✓ verde, swatches no rodapé. CatalogPanel.tsx removido.
+- FacePanel.tsx: ganhou swatches de tom de pele e cor dos olhos (opcional) + aviso reestilizado na paleta azul.
+- CASApp.tsx reescrito: fundo linear-gradient(to top right, #2b73b5, #3a989e, #4cb185) + vinheta, TopBar/BottomBar removidos, controles de câmera/dado no topo-direito, retrato do Sim (plumbob + nome + idade) na base-esquerda, botões ✕ (reset c/ toast) e ✓ (salva PNG via snapshot()) na base-direita, toast inline, mobile com chip de nome + Sheets (Perfil/Catálogo).
+- next.config.ts: devIndicators: false (indicador "N" sobrepunha o retrato).
+- character.ts: guards de null em morphTargetInfluences (typecheck).
+
+Stage Summary:
+- GUI 100% no estilo The Sims 4 CAS, validada por screenshots em 1600×900 e 390×844 (cas_gui_v2_*.png em download/).
+- Todas as interações testadas via agent-browser sem erros de console: troca de gênero, vestido aplicado, rotação ±30°, modo detalhes (zoom facial + sliders + hotspots), seleção de item/swatch, animação Andando, ✕ reset e ✓ download do retrato.
+- Typecheck limpo (excluindo erros pré-existentes em examples/ e skills/).

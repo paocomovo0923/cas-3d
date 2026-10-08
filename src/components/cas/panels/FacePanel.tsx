@@ -8,6 +8,7 @@ import { MousePointer2 } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Slider } from '@/components/ui/slider';
 import { MORPH_DEFS } from '@/lib/cas/morphs';
+import { EYE_COLORS, SKIN_TONES } from '@/lib/cas/catalog';
 import type { MorphValues } from '@/lib/cas/types';
 
 const GROUP_LABELS: Record<string, string> = {
@@ -23,14 +24,25 @@ const GROUP_ORDER = ['cabeca', 'rosto', 'nariz', 'orelhas', 'corpo'] as const;
 interface FacePanelProps {
   morphs: MorphValues;
   onChange: (key: string, value: number) => void;
+  skinTone?: string;
+  eyeColor?: string;
+  onSkinTone?: (hex: string) => void;
+  onEyeColor?: (hex: string) => void;
 }
 
-export function FacePanel({ morphs, onChange }: FacePanelProps) {
+export function FacePanel({
+  morphs,
+  onChange,
+  skinTone,
+  eyeColor,
+  onSkinTone,
+  onEyeColor,
+}: FacePanelProps) {
   return (
     <div className="flex h-full flex-col">
-      <div className="mb-2 flex items-center gap-2 rounded-xl border border-emerald-200 bg-emerald-50/80 px-3 py-2">
-        <MousePointer2 size={14} className="shrink-0 text-emerald-600" />
-        <p className="text-[11px] font-medium leading-snug text-emerald-800">
+      <div className="mb-2 flex items-center gap-2 rounded-xl border border-[#bcdcf5] bg-[#e2f2ff] px-3 py-2">
+        <MousePointer2 size={14} className="shrink-0 text-[#1d5287]" />
+        <p className="text-[11px] font-semibold leading-snug text-[#1d5287]">
           Modo Detalhes: arraste os pontos verdes no rosto ou use os sliders
           abaixo.
         </p>
@@ -76,6 +88,58 @@ export function FacePanel({ morphs, onChange }: FacePanelProps) {
               </div>
             </div>
           ))}
+
+          {/* Tom de Pele */}
+          {skinTone && onSkinTone && (
+            <div>
+              <h3 className="mb-2 text-[11px] font-bold uppercase tracking-wider text-slate-400">
+                Tom de Pele
+              </h3>
+              <div className="flex flex-wrap gap-1.5">
+                {SKIN_TONES.map((c) => (
+                  <button
+                    key={c.hex}
+                    type="button"
+                    title={c.label}
+                    onClick={() => onSkinTone(c.hex)}
+                    style={{ backgroundColor: c.hex }}
+                    className={[
+                      'h-7 w-7 rounded-full border-2 transition-transform hover:scale-110',
+                      skinTone === c.hex
+                        ? 'border-emerald-500 ring-2 ring-emerald-200'
+                        : 'border-white shadow',
+                    ].join(' ')}
+                  />
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Cor dos Olhos */}
+          {eyeColor && onEyeColor && (
+            <div>
+              <h3 className="mb-2 text-[11px] font-bold uppercase tracking-wider text-slate-400">
+                Cor dos Olhos
+              </h3>
+              <div className="flex flex-wrap gap-1.5">
+                {EYE_COLORS.map((c) => (
+                  <button
+                    key={c.hex}
+                    type="button"
+                    title={c.label}
+                    onClick={() => onEyeColor(c.hex)}
+                    style={{ backgroundColor: c.hex }}
+                    className={[
+                      'h-7 w-7 rounded-full border-2 transition-transform hover:scale-110',
+                      eyeColor === c.hex
+                        ? 'border-emerald-500 ring-2 ring-emerald-200'
+                        : 'border-white shadow',
+                    ].join(' ')}
+                  />
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       </ScrollArea>
     </div>
