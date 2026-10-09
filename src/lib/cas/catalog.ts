@@ -145,7 +145,7 @@ export const CATALOG: CatalogDef[] = [
 /* ------------------------------------------------------------------ */
 
 export function buildHair(bind: CharacterBind, id: string, colorHex: string): THREE.Object3D {
-  const { headR: R, headCenter: C } = bind;
+  const { headR: R } = bind;
   const grp = new THREE.Group();
   const mat = new THREE.MeshStandardMaterial({
     color: colorHex,
@@ -154,61 +154,67 @@ export function buildHair(bind: CharacterBind, id: string, colorHex: string): TH
   });
   mat.name = 'hairMat';
 
-  const cap = (thetaLen: number, r = 1.09) => {
-    const g = new THREE.SphereGeometry(R * r, 34, 22, 0, Math.PI * 2, 0, Math.PI * thetaLen);
-    return g;
+  // Crânio real medido por raycast (frame do headGroup/osso Head):
+  // elipsoide com raio ~0.87R (frente/topo/queixo), ~0.67R (lados) e
+  // occipital ~0.76R. A touca envolve esse elipsoide com folga fina.
+  const capScale: [number, number, number] = [0.74, 0.94, 0.92];
+  const capPos: [number, number, number] = [0, 0.02, -0.02];
+  const capMesh = (thetaLen: number) => {
+    const m = new THREE.Mesh(new THREE.SphereGeometry(R, 34, 22, 0, Math.PI * 2, 0, thetaLen), mat);
+    m.scale.set(...capScale);
+    m.position.set(capPos[0] * R, capPos[1] * R, capPos[2] * R);
+    m.castShadow = true;
+    return m;
   };
 
-  const add = (geo: THREE.BufferGeometry, pos?: THREE.Vector3) => {
-    const m = new THREE.Mesh(geo, mat);
+  // painel traseiro na mesma esfera escalada (cai pela nuca/costas)
+  const backPanel = (thetaStart: number, thetaLen: number) => {
+    const m = new THREE.Mesh(
+      new THREE.SphereGeometry(
+        R, 30, 20,
+        Math.PI * 0.82, Math.PI * 1.36, // azimuth: metade traseira
+        thetaStart, thetaLen
+      ),
+      mat
+    );
+    m.scale.set(...capScale);
+    m.position.set(capPos[0] * R, capPos[1] * R, capPos[2] * R);
+    m.rotation.x = 0.12;
     m.castShadow = true;
-    if (pos) m.position.copy(pos).sub(C);
     grp.add(m);
   };
 
   switch (id) {
     case 'curto':
-      add(cap(0.56), C.clone().add(new THREE.Vector3(0, R * 0.03, -R * 0.04)));
+      grp.add(capMesh(0.4 * Math.PI));
       break;
     case 'medio': {
-      add(cap(0.58), C.clone().add(new THREE.Vector3(0, R * 0.02, -R * 0.04)));
-      // painel traseiro: abertura voltada para +Z (frente do rosto)
-      const back = new THREE.SphereGeometry(R * 1.08, 30, 20, Math.PI * 0.95, Math.PI * 1.1, Math.PI * 0.28, Math.PI * 0.5);
-      const m = new THREE.Mesh(back, mat);
-      m.position.set(0, -R * 0.12, -R * 0.04);
-      m.rotation.x = 0.28;
-      m.scale.set(1, 1.5, 1);
-      grp.add(m);
+      grp.add(capMesh(0.42 * Math.PI));
+      backPanel(0.42 * Math.PI, 0.45 * Math.PI); // volume até a nuca
       break;
     }
     case 'longo': {
-      add(cap(0.6), C.clone().add(new THREE.Vector3(0, R * 0.02, -R * 0.04)));
-      const back = new THREE.SphereGeometry(R * 1.1, 30, 22, Math.PI * 0.9, Math.PI * 1.2, Math.PI * 0.25, Math.PI * 0.62);
-      const m = new THREE.Mesh(back, mat);
-      m.position.set(0, -R * 0.55, -R * 0.06);
-      m.rotation.x = 0.22;
-      m.scale.set(1.04, 2.1, 1.0);
-      m.castShadow = true;
-      grp.add(m);
+      grp.add(capMesh(0.42 * Math.PI));
+      backPanel(0.42 * Math.PI, 0.85 * Math.PI); // cai pelas costas
       break;
     }
     case 'coque': {
-      add(cap(0.56), C.clone().add(new THREE.Vector3(0, R * 0.03, -R * 0.04)));
-      const bun = new THREE.Mesh(sphereAt(new THREE.Vector3(0, 0, 0), R * 0.42, [1, 0.9, 1]), mat);
-      bun.position.set(0, R * 0.78, -R * 0.55);
+      grp.add(capMesh(0.4 * Math.PI));
+      const bun = new THREE.Mesh(sphereAt(new THREE.Vector3(0, 0, 0), R * 0.38, [1, 0.9, 1]), mat);
+      bun.position.set(0, R * 0.45, -R * 0.8);
       bun.castShadow = true;
       grp.add(bun);
       break;
     }
     case 'rabo': {
-      add(cap(0.56), C.clone().add(new THREE.Vector3(0, R * 0.03, -R * 0.04)));
+      grp.add(capMesh(0.4 * Math.PI));
       const curve = new THREE.CatmullRomCurve3([
-        new THREE.Vector3(0, R * 0.72, -R * 0.62),
-        new THREE.Vector3(0, R * 0.15, -R * 1.35),
-        new THREE.Vector3(0, -R * 0.75, -R * 1.5),
-        new THREE.Vector3(0, -R * 1.5, -R * 1.15),
+        new THREE.Vector3(0, R * 0.35, -R * 0.9),
+        new THREE.Vector3(0, R * 0.0, -R * 1.1),
+        new THREE.Vector3(0, -R * 0.8, -R * 1.12),
+        new THREE.Vector3(0, -R * 1.55, -R * 0.95),
       ]);
-      const tube = new THREE.Mesh(new THREE.TubeGeometry(curve, 18, R * 0.26, 12), mat);
+      const tube = new THREE.Mesh(new THREE.TubeGeometry(curve, 18, R * 0.24, 12), mat);
       tube.castShadow = true;
       grp.add(tube);
       break;
@@ -235,8 +241,8 @@ export function buildGlasses(bind: CharacterBind, id: string, colorHex: string):
     opacity: id === 'escuro' ? 0.85 : 0.28,
   });
 
-  const eyeY = R * 0.1;
-  const z = R * 0.93;
+  const eyeY = R * 0.16;
+  const z = R * 0.82;
 
   const lensR = R * (id === 'quadrado' ? 0.26 : 0.24);
 
@@ -260,8 +266,8 @@ export function buildGlasses(bind: CharacterBind, id: string, colorHex: string):
     grp.add(lens);
 
     // hastes até as orelhas
-    const temple = new THREE.Mesh(new THREE.CylinderGeometry(R * 0.014, R * 0.014, R * 1.15, 6), frameMat);
-    temple.position.set(sx * R * 0.78, eyeY + R * 0.02, z - R * 0.62);
+    const temple = new THREE.Mesh(new THREE.CylinderGeometry(R * 0.014, R * 0.014, R * 1.0, 6), frameMat);
+    temple.position.set(sx * R * 0.66, eyeY + R * 0.02, z - R * 0.52);
     temple.rotation.x = Math.PI / 2 - 0.1;
     temple.rotation.z = sx * -0.06;
     grp.add(temple);
@@ -271,7 +277,7 @@ export function buildGlasses(bind: CharacterBind, id: string, colorHex: string):
   bridge.position.set(0, eyeY + R * 0.04, z + R * 0.02);
   grp.add(bridge);
 
-  grp.position.sub(C);
+  // filhos já usam offsets relativos ao centro da cabeça (headGroup)
   void C;
   return grp;
 }
@@ -291,28 +297,30 @@ export function buildAccessory(bind: CharacterBind, id: string, colorHex: string
       const m = new THREE.Mesh(g, mat);
       m.position.set(sx * R * 0.02, -R * 0.08, 0);
       const obj = new THREE.Object3D();
-      obj.position.set(sx * R * 0.98, -R * 0.38, -R * 0.02);
+      obj.position.set(sx * R * 0.88, -R * 0.4, -R * 0.06);
       obj.add(m);
       grp.add(obj);
     }
   } else if (id === 'colar') {
     const neckY = bind.neck.y - (bind.neck.y - bind.spine2.y) * 0.35;
-    const torus = new THREE.Mesh(new THREE.TorusGeometry(0.062, 0.008, 10, 30), mat);
+    const torus = new THREE.Mesh(new THREE.TorusGeometry(0.055, 0.008, 10, 30), mat);
     torus.rotation.x = Math.PI / 2 - 0.35;
     torus.position.set(0, neckY + 0.03, 0.01);
     grp.add(torus);
   } else if (id === 'bone') {
     const dome = new THREE.Mesh(
-      new THREE.SphereGeometry(R * 1.12, 30, 18, 0, Math.PI * 2, 0, Math.PI * 0.42),
+      new THREE.SphereGeometry(R, 30, 18, 0, Math.PI * 2, 0, Math.PI * 0.42),
       mat
     );
-    dome.position.set(0, R * 0.16, -R * 0.03);
-    const brim = new THREE.Mesh(new THREE.CylinderGeometry(R * 0.72, R * 0.78, R * 0.045, 24, 1, false, 0, Math.PI * 1.15), mat);
-    brim.position.set(0, R * 0.52, R * 0.42);
+    dome.scale.set(0.78, 0.96, 0.94);
+    dome.position.set(0, R * 0.04, -R * 0.02);
+    const brim = new THREE.Mesh(new THREE.CylinderGeometry(R * 0.58, R * 0.64, R * 0.045, 24, 1, false, 0, Math.PI * 1.15), mat);
+    brim.position.set(0, R * 0.32, R * 0.42);
     brim.rotation.y = Math.PI * 0.42;
     grp.add(dome, brim);
   }
-  grp.position.sub(C);
+  // filhos já usam offsets relativos ao centro da cabeça (headGroup)
+  void C;
   return grp;
 }
 

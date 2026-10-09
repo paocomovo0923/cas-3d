@@ -23,9 +23,11 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { Slider } from '@/components/ui/slider';
 import { GarmentThumb } from '../GarmentThumb';
 import { CATALOG } from '@/lib/cas/catalog';
-import type { CatalogCategory, CatalogItem, CharacterLook } from '@/lib/cas/types';
+import { MORPH_DEFS } from '@/lib/cas/morphs';
+import type { CatalogCategory, CatalogItem, CharacterLook, MorphValues } from '@/lib/cas/types';
 
 const CATEGORY_ICONS: Record<CatalogCategory, LucideIcon> = {
   cabelos: Scissors,
@@ -45,9 +47,11 @@ interface OutfitPanelProps {
   category: CatalogCategory;
   onCategory: (c: CatalogCategory) => void;
   onChange: (patch: Partial<CharacterLook>) => void;
+  morphs?: MorphValues;
+  onMorph?: (key: string, value: number) => void;
 }
 
-export function OutfitPanel({ look, category, onCategory, onChange }: OutfitPanelProps) {
+export function OutfitPanel({ look, category, onCategory, onChange, morphs, onMorph }: OutfitPanelProps) {
   const def = CATALOG.find((c) => c.id === category)!;
 
   const currentItemId = (() => {
@@ -192,6 +196,52 @@ export function OutfitPanel({ look, category, onCategory, onChange }: OutfitPane
             );
           })}
         </div>
+
+        {/* sliders de corpo (proporções do Sim) */}
+        {morphs && onMorph && (
+          <div className="border-t border-[#e4eef6] px-3 pb-3 pt-2">
+            <div className="mb-2 flex items-center gap-1">
+              <span className="flex h-4 w-4 items-center justify-center rounded-full bg-[#e2f2ff]">
+                <PersonStanding size={10} className="text-[#1d5287]" />
+              </span>
+              <h3 className="text-[10px] font-extrabold uppercase tracking-wider text-[#7ba2c4]">
+                Corpo · Proporções
+              </h3>
+            </div>
+            <div className="flex flex-col gap-2">
+              {MORPH_DEFS.filter((d) => d.group === 'corpo').map((mdef) => {
+                const value = morphs[mdef.key] ?? mdef.default;
+                const min = mdef.range === 'bipolar' ? -1 : 0;
+                return (
+                  <div key={mdef.key}>
+                    <div className="mb-0.5 flex items-center justify-between">
+                      <label
+                        htmlFor={`body-${mdef.key}`}
+                        className="text-[11px] font-semibold text-[#41709c]"
+                      >
+                        {mdef.label}
+                      </label>
+                      <span className="rounded bg-[#e2f2ff] px-1 py-0.5 font-mono text-[9px] text-[#1d5287]">
+                        {value >= 0 ? '+' : ''}
+                        {value.toFixed(2)}
+                      </span>
+                    </div>
+                    <Slider
+                      id={`body-${mdef.key}`}
+                      value={[value]}
+                      min={min}
+                      max={1}
+                      step={0.01}
+                      onValueChange={([v]) => onMorph(mdef.key, v)}
+                      aria-label={mdef.label}
+                      className="cursor-pointer [&_[data-slot=slider-range]]:bg-emerald-400 [&_[data-slot=slider-thumb]]:border-emerald-500"
+                    />
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
       </ScrollArea>
 
       {/* swatches */}

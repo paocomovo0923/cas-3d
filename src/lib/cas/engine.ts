@@ -9,8 +9,10 @@ import { HotspotManager } from './hotspots';
 import type { CameraMode, EngineEvents, Gender, MorphValues, CharacterLook, AgeId } from './types';
 
 const MODELS = {
-  F: '/models/avakin_anims_female.glb',
-  M: '/models/avakin_anims_male.glb',
+  F: '/models/avakin_female.gltf',
+  M: '/models/avakin_male.gltf',
+  animsF: '/models/avakin_anims_female.gltf',
+  animsM: '/models/avakin_anims_male.gltf',
   neutralIdle: '/models/neutral_idle.gltf',
   talking: '/models/talking.gltf',
 };
@@ -164,6 +166,10 @@ export class CASEngine {
     this.resize();
     if (typeof window !== 'undefined') {
       (window as unknown as { __cas: CASEngine }).__cas = this;
+      // depuração no dev: Raycaster com suporte a skinning
+      if (process.env.NODE_ENV !== 'production') {
+        (window as unknown as { THREE: typeof THREE }).THREE = THREE;
+      }
     }
     if (typeof ResizeObserver !== 'undefined') {
       this.ro = new ResizeObserver(() => this.resize());
@@ -188,7 +194,7 @@ export class CASEngine {
 
   private async loadCharacters(): Promise<void> {
     const loader = new GLTFLoader();
-    const total = 4;
+    const total = 6;
     let done = 0;
     const step = (label: string) => {
       done++;
@@ -196,16 +202,22 @@ export class CASEngine {
     };
 
     for (const gender of ['F', 'M'] as Gender[]) {
-      this.events.onProgress?.(Math.round((done / total) * 100), gender === 'F' ? 'Carregando Sim feminina…' : 'Carregando Sim masculino…');
-      const gltf = await loader.loadAsync(MODELS[gender]);
-      const clips = [...gltf.animations];
-      const character = new CASCharacter(gender, gltf.scene, clips);
+      this.events.onProgress?.(
+        Math.round((done / total) * 100),
+        gender === 'F' ? 'Carregando Sim feminina…' : 'Carregando Sim masculino…'
+      );
+      // modelo (meshes skinned + morph targets) e biblioteca de clipes F_*/M_*
+      const [charGltf, animsGltf] = await Promise.all([
+        loader.loadAsync(MODELS[gender]),
+        loader.loadAsync(gender === 'F' ? MODELS.animsF : MODELS.animsM),
+      ]);
+      const character = new CASCharacter(gender, charGltf.scene, animsGltf.animations);
       this.scene.add(character.root);
       this.characters.set(gender, character);
       step(`Rig ${gender} pronto`);
     }
 
-    // clips opcionais (Neutral Idle / Talking — exigem .bin que pode não ter sido enviado)
+    // clips extras (Neutral Idle / Talking — Mixamo)
     try {
       const extra = await loader.loadAsync(MODELS.neutralIdle);
       this.extraClips.push(...extra.animations);

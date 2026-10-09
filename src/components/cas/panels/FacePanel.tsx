@@ -16,10 +16,9 @@ const GROUP_LABELS: Record<string, string> = {
   rosto: 'Face e Queixo',
   nariz: 'Nariz',
   orelhas: 'Orelhas',
-  corpo: 'Corpo',
 };
 
-const GROUP_ORDER = ['cabeca', 'rosto', 'nariz', 'orelhas', 'corpo'] as const;
+const GROUP_ORDER = ['cabeca', 'rosto', 'nariz', 'orelhas'] as const;
 
 interface FacePanelProps {
   morphs: MorphValues;

@@ -70,3 +70,26 @@ Stage Summary:
 - GUI 100% no estilo The Sims 4 CAS, validada por screenshots em 1600×900 e 390×844 (cas_gui_v2_*.png em download/).
 - Todas as interações testadas via agent-browser sem erros de console: troca de gênero, vestido aplicado, rotação ±30°, modo detalhes (zoom facial + sliders + hotspots), seleção de item/swatch, animação Andando, ✕ reset e ✓ download do retrato.
 - Typecheck limpo (excluindo erros pré-existentes em examples/ e skills/).
+
+---
+Task ID: 3
+Agent: Super Z (main)
+Task: Integrar os modelos glTF reais (avakin_female/male) e bibliotecas de animação (avakin_anims_female/male + Neutral Idle + Talking) enviados pelo usuário no zip "gltf.zip" ("aqui os bins juntos").
+
+Work Log:
+- Extraído upload/gltf.zip (12 arquivos): avakin_female/male.gltf+bin (modelos skinned com morph targets reais), avakin_anims_female/male.gltf+bin (12 clipes F_*/M_* cada), Neutral Idle.gltf+bin e Talking.gltf+bin (Mixamo).
+- Analisados via script: meshes (torso/legs/hands/feet/head/ears com targetNames em português), skins mixamorig (49 joints F / 41 M), bounds (~1,57 m altura), raios do corpo para calibrar roupas.
+- Testado binding de animação em Node: GLTFLoader sanitiza "mixamorig:Hips" → "mixamorigHips" em nós e tracks — bind direto funciona sem renomear ossos.
+- Copiado para public/models/: 4 gltf+bin dos personagens/anims + neutral_idle.gltf/bin + talking.gltf/bin; removidos os antigos avakin_anims_*.glb (só esqueleto). Corrigidas URIs internas dos bins dos extras ("Neutral%20Idle.bin" → neutral_idle.bin, "Talking.bin" → talking.bin) sem os quais o loader falhava silenciosamente.
+- character.ts REESCRITO: substitui corpo procedural por meshes skinned reais do glTF; material de pele unificado (skinMat) em todas as meshes; morph targets ligados por nome normalizado (resolveMorphKey + alias morphpeso→peso); idade via escala do osso Head (tracks de escala removidos dos clipes para não sobrescrever); face procedural (olhos com íris/pupila, sobrancelhas, boca em TubeGeometry seguindo os lábios) presa ao headGroup no osso Head; roupas/cabelo/óculos/acessórios procedurais mantidos (skinning compartilhado com o novo esqueleto).
+- morphs.ts REESCRITO: 38 morphs reais (cabeca/rosto/nariz/orelhas + grupo corpo: peso, musculo, ombro, cintura, quadril, busto*, antebraco, braco_superior, barriga*, coxa, panturrilha, gluteos_tamanho, gravida_barriga), defaults 0, normMorphKey (NFD, acentos/espaços) e MORPH_NO_RANDOM (gravidez fora do randomize).
+- engine.ts: novos paths, carregamento paralelo personagem+anims por gênero, 6 etapas de progresso, window.THREE exposto em dev para depuração com Raycaster skinning-aware.
+- hotspots.ts: clampMorph via MORPH_MAP; FacePanel: grupos faciais; OutfitPanel: nova seção "Corpo · Proporções" com sliders dos morphs do corpo; CASApp: props morphs/onMorph para o painel de roupas e exclusão da gravidez no aleatorizador.
+- Calibração facial empírica via raycast skinning-aware (agente-browser + THREE exposto): mapeado elipsoide do crânio (0.87R frente/topo, 0.67R lados, occipital 0.76R no frame do osso Head), olhos em 0.75R/±0.34R/+0.15R, sobrancelhas 0.83R, boca como tubo sobre curva medida (cantos 0.85R, centro 0.91R) com depthTest:false (decalque — skinning do lábio diverge do osso Head nas poses).
+- Cabelo/óculos/boné reconstruídos como elipsoides calibrados ao crânio real (capScale 0.74/0.94/0.92); bug antigo corrigido: grp.position.sub(C) em buildGlasses/buildAccessory rendia itens na origem.
+- Testes agent-browser: modelo real de frente, morphs (peso 0.8 engorda corpo todo, queixo/orelhas/nariz), M_walking, extras Neutro/Falando, idade criança (escala óssea), slider Peso via teclado (+0.05), chip Correndo, aleatorizar (corpo+traços+look), ✕ reset completo; typecheck limpo.
+
+Stage Summary:
+- O CAS agora usa os MODELOS REAIS glTF com morph targets da spec (38 sliders reais) e as 12+2 animações da biblioteca — corpo procedural substituído.
+- Screenshots de validação: download/cas_v3_hero.png (hero), cas_v3_morphs.png (peso/queixo/orelhas), cas_v3_male_walking.png (M correndo... walking), cas_v3_talking2.png (extras Mixamo + chips), cas_v3_crianca.png (idade), cas_v3_random.png (aleatório), cas_v3_reset.png (reset).
+- Limitação conhecida: roupas procedurais não acompanham morphs extremos do corpo (afundam em peso alto); cabelo é calota estilizada (o glTF não traz cabelos).

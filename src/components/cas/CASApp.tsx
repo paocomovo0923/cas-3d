@@ -19,7 +19,7 @@ import { OutfitPanel } from './panels/OutfitPanel';
 import { ProfilePanel } from './panels/ProfilePanel';
 import { FacePanel } from './panels/FacePanel';
 import { CASEngine } from '@/lib/cas/engine';
-import { defaultMorphValues, MORPH_DEFS } from '@/lib/cas/morphs';
+import { defaultMorphValues, MORPH_DEFS, MORPH_NO_RANDOM } from '@/lib/cas/morphs';
 import { AGES, ASPIRATIONS, randomPick, TRAITS, WALK_STYLES } from '@/lib/cas/data';
 import { CATALOG } from '@/lib/cas/catalog';
 import { playSimlishVoice } from '@/lib/cas/voice';
@@ -199,6 +199,7 @@ export default function CASApp() {
     });
     const nextMorphs: MorphValues = { ...defaultMorphValues() };
     for (const def of MORPH_DEFS) {
+      if (MORPH_NO_RANDOM.has(def.key)) continue; // gravidez não é aleatória
       nextMorphs[def.key] =
         def.range === 'bipolar'
           ? Math.round((Math.random() * 1.2 - 0.6) * 100) / 100
@@ -402,6 +403,8 @@ export default function CASApp() {
           category={category}
           onCategory={setCategory}
           onChange={(patch) => setLook((l) => ({ ...l, ...patch }))}
+          morphs={morphs}
+          onMorph={handleMorphChange}
         />
       </aside>
 
@@ -421,6 +424,8 @@ export default function CASApp() {
                 category={category}
                 onCategory={setCategory}
                 onChange={(patch) => setLook((l) => ({ ...l, ...patch }))}
+                morphs={morphs}
+                onMorph={handleMorphChange}
               />
             </div>
           </SheetContent>

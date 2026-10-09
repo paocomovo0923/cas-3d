@@ -6,6 +6,7 @@
  * nariz muda nariz_x e nariz_y).
  */
 import * as THREE from 'three';
+import { MORPH_MAP } from './morphs';
 import type { MorphValues } from './types';
 
 interface HotspotDef {
@@ -119,12 +120,8 @@ export class HotspotManager {
   }
 
   private clampMorph(key: string, v: number): number {
-    // bipolar: [-1,1]; unipolar: [0,1]
-    const unipolar = [
-      'formato_da_cabeca', 'queixo', 'bochecha', 'nariz', 'nariz_curva',
-      'nariz_raiz', 'orelha_grande', 'orelha_pontuda', 'orelha_colada',
-    ];
-    if (unipolar.includes(key)) return Math.min(1, Math.max(0, v));
+    // bipolar: [-1,1]; unipolar: [0,1] — conforme MORPH_MAP
+    if (MORPH_MAP[key]?.range !== 'bipolar') return Math.min(1, Math.max(0, v));
     return Math.min(1, Math.max(-1, v));
   }
 
